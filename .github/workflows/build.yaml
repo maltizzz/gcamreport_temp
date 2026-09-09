@@ -1,0 +1,49 @@
+name: build
+
+on:
+  push:
+    branches:
+      - gcam-core
+      - gcam-iamcompact
+      - dev_commdef
+
+jobs:
+  R-CMD:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    name: ubuntu-latest (4.1)
+
+    env:
+      R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
+      GITHUB_PAT: ${{ secrets.GH_GCAMREPORT_TOKEN }}
+      RENV_CONFIG_REPOS_OVERRIDE: https://packagemanager.posit.co/cran/__linux__/jammy/latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.1'
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libcurl4-openssl-dev libxml2-dev libssl-dev
+          
+      - name: Install dependencies
+        run: |
+          install.packages("pak")
+          # Install everything needed for the package and its tests
+          pak::local_install_dev_deps()
+          # Install specific extra tools and GitHub packages
+          pak::pkg_install(c("devtools", "rcmdcheck", "JGCRI/rpackageutils", "shinyTree/shinyTree"))
+        shell: Rscript {0}
+
+      - name: Run tests
+        run: |
+          # Ensure pkgload and testthat are ready
+          devtools::test()
+        shell: Rscript {0}
