@@ -11,7 +11,7 @@ real (but small and fixable) bugs. One is a missing test file. Two of them
 are false alarms caused by testing an old, un-refreshed copy of the package
 instead of the current code.
 
----
+----
 
 ## Test 1 — `test_reporter_hist.R` (historical values check)
 
