@@ -1,4 +1,4 @@
-# Extracted from test_reporter_hist.R:29
+# Extracted from test_reporter_hist.R:34
 
 # setup ------------------------------------------------------------------------
 library(testthat)
@@ -9,17 +9,18 @@ attach(test_env, warn.conflicts = FALSE)
 library(gcamreport)
 library(testthat)
 library(magrittr)
+available_GCAM_versions <- c("v7.0", "v7.1", "v8.2", "v9.1")
 
 # test -------------------------------------------------------------------------
-for (GCAMv in gcamreport::available_GCAM_versions) {
+for (GCAMv in available_GCAM_versions) {
     print(GCAMv)
 
     prjtest_name <- switch(GCAMv,
                            "v7.0"              = "test7.dat",
-                           "v7.1"              = "database_basexdb_hist_7p1.dat",
+                           "v7.1"              = "test7.1.dat", #"database_basexdb_hist_7p1.dat",
                            "v7.2"              = "test7p2.dat",
                            "v8.2"              = "gcamreport_onboard8p2_Ctax_260210",
-                           "v9.1"              = "database_basexdb_gcam_v9.1_report.dat",
+                           "v9.1"              = "database_basexdb_gcam_v9.1_report.dat", # [maltizzz: adding the GCAM v9.1 Reference scenario outputs]-
                            "vScenarioMIPCMIP7" = "db_exp_scenarioMIPcmip7",
                            "vEurope7.2"        = "db_test_Europe7.2.dat",
                            "vEurope8.7"        = "db_test_Europe8.7.dat",
