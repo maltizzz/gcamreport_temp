@@ -13,9 +13,9 @@ gcamreport_run <- function(
 ) {
   # Work in the package root so devtools::load_all() can find DESCRIPTION.
   if (isTRUE(test_)) {
-    setwd("C:/Users/pjhan/Desktop/git/iam_models/GCAM/gcamreport_temp")
+    setwd("C:/Users/pjhan/Desktop/git/iam_models/GCAM/gcamreport-integrated/gcamreport-temp")
   } else {
-    setwd("C:/Users/pjhan/Desktop/git/iam_models/GCAM/gcamreport")
+    setwd("C:/Users/pjhan/Desktop/git/iam_models/GCAM/gcamreport-integrated/gcamreport")
   }
 
   devtools::load_all(".", reset = TRUE)
