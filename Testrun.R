@@ -66,31 +66,6 @@ gcamreport_run <- function(
 #gcamreport_run(test_ = TRUE, gcamreport_version_ = "v9.1", gcam_file_version_ = "v9.1", run_type_ = "ui")
 
 
-## 2) Run if "official" version can generate 9.1 reports in 8.2 settings
-#gcamreport_run(test_ = FALSE, gcamreport_version_ = "v8.2", gcam_file_version_ = "v9.1", run_type_ = "report")
-
-# a) Following erros happen
-# Error in left_join_strict(., get(paste("ag_price_map", GCAM_version, sep = "_"),  : 
-#   Error: Some rows in the left dataset do not have matching keys in the right dataset. Type `left_join_strict_details` to see the full log. Some of the rows that the mapping ag_price_map_v8.2 miss are:
-# # A tibble: 10 × 1
-#    sector                         
-#    <chr>                          
-#  1 resid clothes dryers modern_d1 
-#  2 resid clothes dryers modern_d10
-#  3 resid clothes dryers modern_d2 
-#  4 resid clothes dryers modern_d3 
-#  5 resid clothes dryers modern_d4 
-#  6 resid clothes dryers modern_d5 
-#  7 resid clothes dryers modern_d6 
-#  8 resid clothes dryers modern_d7 
-#  9 resid clothes dryers modern_d8 
-# 10 resid clothes dryers modern_d9 
-# In addition: Warning messages:
-# 1: In create_project(db_path = db_path, db_name = db_name, prj_name = prj_name,  :
-#   CO2 prices query is empty!
-# 2: In rgcam::mergeProjects(prj_name, list(prj, prj_tmp), clobber = FALSE,  :
-#   Skipping data in Reference / CO2 emissions by region as clobber is false.
-
-## 3) Final test run
-#gcamreport_run(test_ = TRUE, gcamreport_version_ = "v9.1", gcam_file_version_ = "v9.1", run_type_ = "report")
+## 2) Test report generation for v9.1 [Succeed]
+gcamreport_run(test_ = TRUE, gcamreport_version_ = "v9.1", gcam_file_version_ = "v9.1", run_type_ = "report")
 gcamreport_run(test_ = TRUE, gcamreport_version_ = "v9.1", gcam_file_version_ = "v9.1", run_type_ = "ui")
