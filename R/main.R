@@ -15,10 +15,8 @@
 #'
 #' @return A dataframe containing the data retrieved from the specified non-CO2 emissions query.
 #' @export
-
-# Specifying the parameters
 data_query <- function(type, db_path, db_name, prj_name, scenarios,
-                       desired_regions = "All", GCAM_version = 'v9.1',
+                       desired_regions = "All", GCAM_version = 'v8.2',
                        queries_nonCO2_file = NULL) {
   if (identical(desired_regions, "All")) {
     desired_regions <- NULL
@@ -91,7 +89,7 @@ data_query <- function(type, db_path, db_name, prj_name, scenarios,
 #'
 #' @return The function loads the specified GCAM project into the global environment. It does not return a value, but the project data becomes available for use in further analysis or reporting.
 #' @export
-load_project <- function(project_path, desired_regions = "All", scenarios = NULL, GCAM_version = 'v9.1') {
+load_project <- function(project_path, desired_regions = "All", scenarios = NULL, GCAM_version = 'v8.2') {
   # rm variable "prj" from the environment if exists
   if (exists("prj")) rm(prj, envir = .GlobalEnv)
 
@@ -153,7 +151,7 @@ load_project <- function(project_path, desired_regions = "All", scenarios = NULL
 #' @export
 create_project <- function(db_path, db_name, prj_name, scenarios = NULL,
                            desired_regions = "All", desired_variables = "All",
-                           GCAM_version = 'v9.1',
+                           GCAM_version = 'v8.2',
                            queries_general_file = NULL, queries_nonCO2_file = NULL) {
   Internal_variable <- Variable <- required <- available_scenarios <- name <- NULL
 
@@ -222,6 +220,7 @@ create_project <- function(db_path, db_name, prj_name, scenarios = NULL,
       )
     }
     required_queries <- unique(required_queries[!is.na(required_queries)])
+    required_queries <- unlist(strsplit(required_queries, split = "|", fixed = TRUE))
 
     # save the read-to-use queries in a vector
     queries_touse_short <- queries_short[names(queries_short) %in% unlist(strsplit(required_queries, "\\|"))]
@@ -337,7 +336,7 @@ create_project <- function(db_path, db_name, prj_name, scenarios = NULL,
       value = rep(NA, l)
     )
     prj_tmp <- rgcam::addQueryTable(
-      project = prj_name, qdata = dt,
+      project = prj_name, qdata = dt, saveProj = F,
       queryname = "CO2 prices", clobber = TRUE
     )
     if (!is.null(prj)) {
@@ -372,10 +371,11 @@ create_project <- function(db_path, db_name, prj_name, scenarios = NULL,
 #'
 #' @keywords internal
 #' @export
-load_variable <- function(var, GCAM_version = 'v9.1', GWP_version = 'AR5') {
+load_variable <- function(var, GCAM_version = 'v8.2', GWP_version = 'AR5') {
 
   # base case: if variable already loaded, return
   if (exists(as.character(var$name))) {
+    loaded_internal_variables.global <<- c(loaded_internal_variables.global, as.character(var$name))
     return()
   }
 
@@ -451,7 +451,7 @@ load_query <- function(var, base_data, final_queries) {
 #' @return A vector of character strings representing the names of all available regions. If `print` is TRUE, the function also prints this list to the console.
 #'
 #' @export
-available_regions <- function(print = TRUE, GCAM_version = 'v9.1') {
+available_regions <- function(print = TRUE, GCAM_version = 'v8.2') {
   continent <- region <- NULL
 
   av_reg <- get(paste('reg_cont',GCAM_version,sep='_'), envir = asNamespace("gcamreport")) %>%
@@ -479,7 +479,7 @@ available_regions <- function(print = TRUE, GCAM_version = 'v9.1') {
 #' @return A vector of character strings representing the names of all available regions' groups. If `print` is TRUE, the function also prints this list to the console.
 #'
 #' @export
-available_continents <- function(print = TRUE, GCAM_version = 'v9.1') {
+available_continents <- function(print = TRUE, GCAM_version = 'v8.2') {
   continent <- region <- NULL
 
   av_cont <- unique(get(paste('reg_cont',GCAM_version,sep='_'), envir = asNamespace("gcamreport"))[['continent']])
@@ -506,7 +506,7 @@ available_continents <- function(print = TRUE, GCAM_version = 'v9.1') {
 #' @return A vector of character strings representing the names of all available variables. If `print` is TRUE, the function also prints this list to the console.
 #'
 #' @export
-available_variables <- function(print = TRUE, GCAM_version = 'v9.1') {
+available_variables <- function(print = TRUE, GCAM_version = 'v8.2') {
   Internal_variable <- NULL
 
   av_var <- get(paste('template',GCAM_version,sep='_'), envir = asNamespace("gcamreport")) %>%
@@ -566,7 +566,7 @@ generate_report <- function(db_path = NULL, db_name = NULL, prj_name, scenarios 
                             desired_variables = "All", inverse_desired_variables = FALSE,
                             ignore = NULL, desired_regions = "All", desired_continents = "All",
                             save_output = TRUE, output_file = NULL, launch_ui = TRUE, interactive = F,
-                            GCAM_version = 'v9.1', GWP_version = 'AR5',
+                            GCAM_version = 'v8.2', GWP_version = 'AR5',
                             queries_general_file = NULL, queries_nonCO2_file = NULL,
                             all_tier1 = F) {
   continent <- region <- name <- Variable <- Internal_variable <- required <- prj_loaded <- NULL
@@ -585,7 +585,7 @@ generate_report <- function(db_path = NULL, db_name = NULL, prj_name, scenarios 
     }
   } else {
     stop(sprintf(
-      "GCAM_version must be a character string, but you provided a value of type '%s'. Please specify the GCAM_version as a string, e.g., GCAM_version = 'v9.1'.",
+      "GCAM_version must be a character string, but you provided a value of type '%s'. Please specify the GCAM_version as a string, e.g., GCAM_version = 'v8.2'.",
       class(GCAM_version)
     ))
   }
@@ -919,7 +919,7 @@ generate_report <- function(db_path = NULL, db_name = NULL, prj_name, scenarios 
 #' @return Launches the Shiny interactive UI. This function does not return a value but starts the Shiny application for user interaction.
 #'
 #' @export
-launch_gcamreport_ui <- function(data_path = NULL, data = NULL, GCAM_version = 'v9.1') {
+launch_gcamreport_ui <- function(data_path = NULL, data = NULL, GCAM_version = 'v8.2') {
   # check the user input
   if (is.null(data_path) && is.null(data)) {
     stop("Error: Neither 'data_path' nor 'data' has been provided. Please specify at least one of these: 'data_path' to point to the location of the dataset file or 'data' to provide the dataset directly.")

@@ -2,29 +2,24 @@ library(gcamreport)
 library(testthat)
 library(magrittr)
 
-available_GCAM_versions <- c("v7.0", "v7.1", "v8.2", "v9.1")
-                            #"v7.2", "vScenarioMIPCMIP7", "vEurope7.2", "vEurope8.7"
-                            
-
 test_that("Test_historical_values", {
 
-  #for (GCAMv in gcamreport::available_GCAM_versions) {
-  for (GCAMv in available_GCAM_versions) {
+  for (GCAMv in gcamreport::available_GCAM_versions) {
     print(GCAMv)
 
     prjtest_name <- switch(GCAMv,
                            "v7.0"              = "test7.dat",
-                           "v7.1"              = "test7.1.dat", #"database_basexdb_hist_7p1.dat",
+                           "v7.1"              = "database_basexdb_hist_7p1.dat",
                            "v7.2"              = "test7p2.dat",
-                           "v8.2"              = "gcamreport_onboard8p2_Ctax_260210",
-                           "v9.1"              = "database_basexdb_gcam_v9.1_report.dat", # [maltizzz: adding the GCAM v9.1 Reference scenario outputs]-
-                           "vScenarioMIPCMIP7" = "db_exp_scenarioMIPcmip7",
+                           "v8.2"              = "gcamreport_onboard8p2_Ctax_260210.dat",
+                           "v9.1"              = "test9.1.dat",
+                           "vScenarioMIPCMIP7" = "db_exp_scenarioMIPcmip7.dat",
                            "vEurope7.2"        = "db_test_Europe7.2.dat",
                            "vEurope8.7"        = "db_test_Europe8.7.dat",
                            stop(sprintf(
                              "Unrecognized GCAM version: '%s'. To proceed, add this version to `test_reporter_hist` and provide a corresponding GCAM output sample.",
                              GCAMv
-                           ))) # TODO add this info to the documentation site
+                           )))
 
     generate_report(prj_name = file.path(rprojroot::find_root(rprojroot::is_testthat), "testInputs", sub("^v", "v_", GCAMv), prjtest_name),
                     final_year = 2030, launch_ui = FALSE, GCAM_version = GCAMv, save_output = FALSE,
