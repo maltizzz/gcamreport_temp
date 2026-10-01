@@ -67,5 +67,6 @@ gcamreport_run <- function(
 
 
 ## 2) Test report generation for v9.1 [Succeed]
-gcamreport_run(test_ = TRUE, gcamreport_version_ = "v9.1", gcam_file_version_ = "v9.1", run_type_ = "report")
-gcamreport_run(test_ = TRUE, gcamreport_version_ = "v9.1", gcam_file_version_ = "v9.1", run_type_ = "ui")
+gcamreport_run(
+  test_ = TRUE, 
+  gcamreport_version_ = "v9.1", gcam_file_version_ = "v9.1", run_type_ = "report")

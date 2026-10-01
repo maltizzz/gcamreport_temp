@@ -398,15 +398,6 @@ GirondeGironde_water withdrawals,NoReported,,,,,,,,,,,,,,,,,,,,,,,,,,,,1
 global solar resource,NoReported,,,,,,,,,,,,,,,,,,,,,,,,,,,,1
 globalbio_externality_cost,NoReported,,,,,,,,,,,,,,,,,,,,,,,,,,,,1
 globalbio-ceiling,NoReported,,,,,,,,,,,,,,,,,,,,,,,,,,,,1
-bio-ceiling,NoReported,,,,,,,,,,,,,,,,,,,,,,,,,,,,1
-rowbio-ceiling,NoReported,,,,,,,,,,,,,,,,,,,,,,,,,,,,1
-cement-ceiling,NoReported,,,,,,,,,,,,,,,,,,,,,,,,,,,,1
-coal-ceiling,NoReported,,,,,,,,,,,,,,,,,,,,,,,,,,,,1
-imported H2,NoReported,,,,,,,,,,,,,,,,,,,,,,,,,,,,1
-dac-ceiling,NoReported,,,,,,,,,,,,,,,,,,,,,,,,,,,,1
-CO2_Kor,NoReported,,,,,,,,,,,,,,,,,,,,,,,,,,,,1
-rowCO2,NoReported,,,,,,,,,,,,,,,,,,,,,,,,,,,,1
-rowCO2_LUC,NoReported,,,,,,,,,,,,,,,,,,,,,,,,,,,,1
 globalC2F6,NoReported,,,,,,,,,,,,,,,,,,,,,,,,,,,,1
 globalCF4,NoReported,,,,,,,,,,,,,,,,,,,,,,,,,,,,1
 globalCH4,NoReported,,,,,,,,,,,,,,,,,,,,,,,,,,,,1

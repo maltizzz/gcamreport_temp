@@ -105,38 +105,6 @@ ROWCO2,South Korea
 ROWCO2,Southeast Asia
 ROWCO2,Taiwan
 ROWCO2,USA
-# KAIST scenarios: rest-of-world CO2 market is named 'rowCO2' (South Korea has its own regional market)
-rowCO2,Africa_Eastern
-rowCO2,Africa_Northern
-rowCO2,Africa_Southern
-rowCO2,Africa_Western
-rowCO2,Argentina
-rowCO2,Australia_NZ
-rowCO2,Brazil
-rowCO2,Canada
-rowCO2,Central America and Caribbean
-rowCO2,Central Asia
-rowCO2,China
-rowCO2,Colombia
-rowCO2,European Free Trade Association
-rowCO2,EU-12
-rowCO2,EU-15
-rowCO2,Ukraine
-rowCO2,Europe_Non_EU
-rowCO2,India
-rowCO2,Indonesia
-rowCO2,Pakistan
-rowCO2,Japan
-rowCO2,Mexico
-rowCO2,Middle East
-rowCO2,Russia
-rowCO2,South Africa
-rowCO2,South America_Southern
-rowCO2,South America_Northern
-rowCO2,South Asia
-rowCO2,Southeast Asia
-rowCO2,Taiwan
-rowCO2,USA
 RussiaCO2,Russia
 RussiaCO2_NearTerm,Russia
 South AfricaCO2,South Africa
