@@ -406,23 +406,6 @@ handle_warning <- function(mapping_name1, mapping_name2 = NULL, query_name = NUL
 }
 
 
-#' is_ignored
-#'
-#' Flags names that match any of the user-supplied `ignore` patterns (`.myGlobals$ignore.global`).
-#' Returns all `FALSE` when no pattern is set. Without this guard, `paste(NULL, collapse = "|")` gives
-#' the empty pattern `""`, which `grepl()` matches against every string, so e.g. every CO2 price market
-#' was dropped whenever `generate_report()` was called without `ignore`.
-#'
-#' @param x Character vector of names (e.g. market names).
-#' @keywords internal
-#' @return Logical vector of the same length as `x`.
-is_ignored <- function(x) {
-  ig <- .myGlobals$ignore.global
-  if (length(ig) == 0) return(rep(FALSE, length(x)))
-  grepl(paste(ig, collapse = "|"), x)
-}
-
-
 #' left_join_strict
 #'
 #' A restrictive version of \code{\link{left_join}} that ensures that all keys in the left dataset have corresponding matches in the right dataset.
@@ -4934,13 +4917,13 @@ get_co2_price_fragmented_tmp <- function(GCAM_version = 'v8.2') {
     dplyr::filter(!grepl("global|Global|world|World", market)) %>%
     dplyr::filter(Units == "1990$/tC") %>%
     tibble::as_tibble() %>%
-    dplyr::filter(!is_ignored(market))
+    dplyr::filter(!grepl(paste(.myGlobals$ignore.global, collapse = "|"), market))
 
 
   if (nrow(co2_price_fragmented_pre) > 1) {
     CO2_market_filteredReg <- filter_data_regions(get(paste('co2_market',GCAM_version,sep='_'), envir = asNamespace("gcamreport")), GCAM_version = GCAM_version) %>%
       dplyr::filter(region != 'NoReported') %>%
-      dplyr::filter(!is_ignored(market))
+      dplyr::filter(!grepl(paste(.myGlobals$ignore.global, collapse = "|"), market))
 
     co2_price_fragmented <-
       co2_price_fragmented_pre %>%

@@ -83,7 +83,6 @@ FodderGrass,Pasture_FodderGrass,NoReported,,,,,,,,1
 Pasture,Pasture_FodderGrass,NoReported,,,,,,,,1
 regional beef,regional beef,NoReported,,,,,,,,1
 total biomass,regional biomass,Agricultural Demand,Agricultural Demand|Crops,Agricultural Demand|Crops|Bioenergy,Agricultural Demand|Crops|Bioenergy|2nd Generation,,,,,1
-bio-ceiling,regional biomass,NoReported,,,,,,,,1
 regional oilcrop,regional biomassOil,Agricultural Demand,Agricultural Demand|Crops,Agricultural Demand|Crops|Bioenergy,Agricultural Demand|Crops|Bioenergy|1st Generation,,,,,1
 regional oilpalm,regional biomassOil,Agricultural Demand,Agricultural Demand|Crops,Agricultural Demand|Crops|Bioenergy,Agricultural Demand|Crops|Bioenergy|1st Generation,,,,,1
 regional soybean,regional biomassOil,Agricultural Demand,Agricultural Demand|Crops,Agricultural Demand|Crops|Bioenergy,Agricultural Demand|Crops|Bioenergy|1st Generation,,,,,1

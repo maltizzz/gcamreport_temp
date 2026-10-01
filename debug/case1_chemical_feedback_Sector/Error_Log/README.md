@@ -263,16 +263,76 @@ Expected effect: `Price|Carbon*` for the 31 non-Korea regions in the NZ report c
 `rowCO2` value converted to 2010US$/tCO2 (about 114 in 2030, 170 in 2050). The Ref scenario has no
 CO2 price market ("CO2 prices query is empty!" warning) and is unaffected.
 
-## 5. Open observation: run 1 failed earlier than the Linux run
+## 5. Why `bio-ceiling` failed on Windows but not on Linux: `debug.R` has `ignore` commented out
 
-Run 1 on Windows (`Error_Log/run1_reproduce.log`, project *created* from the database) failed in
-`get_ag_demand()` on `input = bio-ceiling, sector = regional biomass` from the
-`regional biomass consumption` query, even though `ignore = "^bio-ceiling$"` was passed. The Linux run
-and run 2/3 on Windows (project *loaded* from the saved `.dat`) pass this step, and calling
-`get_ag_demand("v9.1")` directly on the saved project with `.myGlobals$ignore.global` set also passes.
-The energy price fix above also maps `bio-ceiling` to `NoReported` in the price map, but the
-agricultural demand map still relies on the `ignore` mechanism for it. See §6 for what the final
-create-path run showed.
+Run 1 (and later runs 8, 10, 11) failed in `get_ag_demand()` on `input = bio-ceiling, sector = regional
+biomass` although the script appeared to pass `ignore = "^bio-ceiling$"`. The Linux retry log passed
+this step. After a long isolation (runs 2-3, 7, 9-18, see §6.1) the instrumented run 18 printed the
+call as matched inside `generate_report()`:
+
+```
+generate_report(db_path = db_path, db_name = job$db, prj_name = ..., scenarios = job$scenario,
+                GCAM_version = GCAM_version, final_year = 2050, desired_regions = "All", ...)
+```
+
+There is no `ignore` argument. The current `debug.R` (and the backup `Error_Log/debug_original_linux_paths.R`
+taken at 13:00 before the path edit) contain
+
+```r
+    # ignore = "^bio-ceiling$",
+```
+
+whereas the Linux twin `Input/process_u0909.R` (12:17) has the line active. The line was commented out
+in the IDE between the first read of `debug.R` (about 12:50, still active) and 13:00. Every script
+derived from `debug.R` by path substitution (runs 1, 8, 10, 11) inherited the comment and ran with
+`ignore = NULL`; every script typed by hand for the isolation (runs 2, 3, 7, 9, 12, 13) had the argument
+active and passed. The apparent "fails only inside the `for` loop" pattern was an artefact of which
+scripts were derived from `debug.R` and which were written by hand. **There is no package bug in the
+`ignore` mechanism** (the direct tests in §6.1 confirm it works).
+
+**Fix 7 (keeps `debug.R` working as it is now):** `inst/extdata/mappings/GCAM9.1/ag_demand_map.csv`
+gets the row `bio-ceiling,regional biomass,NoReported,…,1` (what the `ignore` pattern was meant to do),
+`data/ag_demand_map_v9.1.rda` regenerated and asserted (328 → 329 rows). With it `debug.R` completes
+both scenarios without needing `ignore` (run 14, load path; run 16, full create path, §6.2). Whether to
+un-comment `ignore` in `debug.R` is the user's choice; it is harmless either way.
+
+Lesson recorded for the log: when a run fails "despite" an argument, print the matched call
+(`sys.call()`) first, before chasing environment or data differences.
+
+## 5b. Package bug found by the final run: all carbon prices vanish when `ignore` is not given
+
+Run 16 (`debug.R` as written, no `ignore`, fixes 1-7) completed both scenarios, but comparing its NZ
+output with run 6 (same package except fix 7, `ignore` given) showed exactly 66 differing rows:
+`Price|Carbon` and `Revenue|Government` for all 33 regions were **0** in run 16 (e.g. South Korea 2050:
+1287 → 0; World 2050 revenue: 623 → 0). The Ref output was identical in both runs.
+
+Cause (`R/functions.R`, `get_co2_price_fragmented_tmp()`, two places):
+
+```r
+dplyr::filter(!grepl(paste(.myGlobals$ignore.global, collapse = "|"), market))
+```
+
+With no `ignore`, `.myGlobals$ignore.global` is `NULL`, `paste(NULL, collapse = "|")` is `""`, and
+`grepl("", market)` is `TRUE` for every market, so the filter removes every CO2 price market. The
+function then finds `nrow(co2_price_fragmented_pre) <= 1`, sets `co2_price_fragmented <- NULL`, and
+every downstream carbon-price variable is zero. This affects **any** `generate_report()` call without
+`ignore` on a database that has CO2 prices (the core v9.1 Reference has none, which is why Testrun.R
+never showed it). On Linux the step was masked because `process_u0909.R` passes `ignore`.
+
+**Fix 8 (R code, the only code change in this debugging):** new internal helper in `R/functions.R`
+
+```r
+is_ignored <- function(x) {
+  ig <- .myGlobals$ignore.global
+  if (length(ig) == 0) return(rep(FALSE, length(x)))
+  grepl(paste(ig, collapse = "|"), x)
+}
+```
+
+and both filters replaced by `dplyr::filter(!is_ignored(market))`. Behaviour with a non-empty `ignore`
+is unchanged. The `for (ign in unique(.myGlobals$ignore.global))` loop in `get_energy_price_tmp()` is
+already safe with `NULL`. Original file kept as `Error_Log/functions_BEFORE_fix8.R`.
+Verification: run 19 (§6.1/6.2).
 
 ## 6. Verification
 
@@ -287,10 +347,20 @@ create-path run showed.
 | 5 | `run5_softscan_nz.R/.log/.rds` | fixes 1-3, logging join | NZ, created from DB | completed; gaps → fixes 4-5 (§4d) |
 | 6 | `run6_verify_nz_fastload.R/.log` | fixes 1-6, real join | NZ, loaded | **completed**, 85 variables, vetting Inf/NA OK |
 | 7 | `run7_verify_ref_fastload.R/.log` | fixes 1-6, real join | Ref, loaded | **completed**, 85 variables, vetting Inf/NA OK |
-| 8 | `debug.R` → `run8_final_debugR.log` | fixes 1-6 | both, created from DB | see §6.2 |
+| 8 | `debug.R` → `run8_final_debugR.log` | fixes 1-6 | Ref, created from DB | failed in `get_ag_demand()` (`ignore` commented out, §5) |
+| 9 | `run9_diag_create_path.R/.log` | fixes 1-6, original join + diagnostics, `ignore` active | Ref, created from DB | completed |
+| 10 | `run10_debugR_loadpath.R/.log` | fixes 1-6, `debug.R` verbatim (no `ignore`) | Ref, loaded | failed in `get_ag_demand()` |
+| 11 | `run11_debugR_withdplyr.R/.log` | as 10 + `library(dplyr)` | Ref, created from DB | failed in `get_ag_demand()` |
+| 12 | `run12_debugR_loadpath_unrolled.R/.log` | fixes 1-6, hand-written call with `ignore` | Ref, loaded | completed |
+| 13 | `run13_debugR_loadpath_jobargs.R/.log` | as 12 with `job$...` arguments | Ref, loaded | completed |
+| 14 | `run14_debugR_loop_diag.R/.log` | fixes 1-7, `debug.R` structure, diagnostic join | both, loaded | **completed** (fix 7 makes `ignore` unnecessary) |
+| 15, 17, 18 | `run15/17/18_*.R/.log` | fix 7 undone in memory, diagnostic join | Ref, loaded | failed as expected; run 18 printed the matched call without `ignore` (§5) |
+| 16 | `debug.R` → `run16_final_debugR_prefix8.log` | fixes 1-7 | both, created from DB | completed, but NZ carbon prices all 0 → §5b |
+| 19 | `run19_verify_nz_noignore_fix8.R/.log` | fixes 1-8, no `ignore` | NZ, loaded | **completed**; output identical to run 6 (0 differing rows), `Price\|Carbon` restored in 33/33 regions |
+| 20 | `debug.R` → `run20_final_debugR_fix8.log` | fixes 1-8 | both, created from DB | **completed**, reports identical to runs 7 / 19 (§6.2) |
 
-Runs 6 and 7 wrote their reports to a scratch folder; run 8 is the user's script unchanged (apart
-from the Windows paths) and writes to `Input/reports_u0909/`.
+Runs 6, 7 and 19 wrote their reports to a scratch folder; runs 8, 16 and 20 are the user's script unchanged
+(apart from the Windows paths) and write to `Input/reports_u0909/`.
 
 NZ cross-check (run 6 vs run 5 output, same package except fix 6): identical row set (90 833 rows);
 the only differing rows are `Price|Carbon` and `Revenue|Government` (all 32 regions + World) and
@@ -300,11 +370,64 @@ in 2030 / 2050: South Korea 124.9 / 1287.0, every other region 114.9 / 172.4 (20
 
 ### 6.2 Final `debug.R` run (both scenarios, projects re-created from the databases)
 
-(Filled in when run 8 finishes.)
+Run 20 (`Error_Log/run20_final_debugR_fix8.log`, 22:22-22:51, no network stall): `debug.R` exactly as it
+is now (Windows paths, `ignore` commented out), package with fixes 1-8.
+
+| scenario | project | report files (`Input/reports_u0909/`) | variables loaded | vetting |
+|---|---|---|---|---|
+| `KAIST_9_ref_u0909` (`u0909r`) | created → `Input/u0909r_Ref_u0909.dat` | `Ref_u0909.csv/.xlsx/.RData` | 85 | Inf OK, NA OK |
+| `KAIST_9_NZ_u0909` (`u0909n`) | created → `Input/u0909n_NZ_u0909.dat` | `NZ_u0909.csv/.xlsx/.RData` | 85 | Inf OK, NA OK |
+
+Content checks (`helper_scripts/cmp_run20.R`):
+
+| report | rows | variables | regions | compared with | differing rows |
+|---|---|---|---|---|---|
+| `Ref_u0909.csv` | 88 993 | 2 888 | 33 | run 7 (`Ref_verify.csv`, loaded project, `ignore` given) | 0 |
+| `NZ_u0909.csv` | 90 833 | 2 944 | 33 | run 19 (`NZ_noignore_fix8.csv`) and, transitively, run 6 | 0 |
+
+`Price|Carbon` is non-zero in 33/33 regions of the NZ report (South Korea 2030/2050: 124.9 / 1287.0;
+other regions 114.9 / 172.4 2010US$/tCO2). South Korea's `Carbon Capture|Utilization|Other` (coal
+feedstock, fix 1) and `Primary Energy|Nuclear` (incl. `uranium`, fix 3) are populated.
+
+The earlier full run with fixes 1-7 only (run 16, `run16_final_debugR_prefix8.log`) produced the same
+Ref report but an NZ report with all carbon prices equal to zero; those files were overwritten by run 20.
 
 ### 6.3 `Testrun.R` (core GCAM v9.1 Reference database) after the changes
 
-(Filled in when the Testrun finishes.)
+`Testrun.R` (as currently written: `gcamreport_run(test_ = TRUE, gcamreport_version_ = "v9.1",
+gcam_file_version_ = "v9.1", run_type_ = "report")`, i.e. `generate_report()` with `launch_ui = TRUE`)
+was run unattended with `Error_Log/helper_scripts/run_testrun.sh` on the final package state (fixes 1-8).
+Log: `Error_Log/testrun_v9.1.log`. Before any change, the previous outputs in
+`C:/Users/pjhan/Desktop/GCAM/gcam-v9.1-Windows-Release-Package/output/` (dated 2026-09-24) were copied
+aside as the baseline.
+
+* Project re-created from `database_basexdb`, all 85 internal variables loaded, vetting `Inf: OK`,
+  `NA: OK`, `gcam_v9.1_report_standardized.{csv,xlsx,RData}` written.
+* UI: `Launching UI...` → `Listening on http://127.0.0.1:4566` (Shiny started; the wrapper then stopped
+  the R process, since the UI blocks forever).
+* Accuracy (`Error_Log/helper_scripts/compare_testrun.R`, baseline vs new CSV):
+
+  | | baseline | new |
+  |---|---|---|
+  | rows | 88 961 | 88 961 |
+  | key rows only on one side | 0 | 0 |
+  | rows with any absolute difference > 1e-9 | 0 | |
+  | max absolute / relative difference | 0 / 0 | |
+
+  The core Reference output is byte-for-byte unchanged, as expected: every added mapping row keys on a
+  name that core GCAM never produces, and fix 8 only matters when CO2 price markets exist.
+
+An earlier Testrun started two minutes before fix 8 was applied was aborted and restarted
+(`Error_Log/testrun_v9.1_aborted_prefix8.log`) so that the comparison reflects the final code.
+
+### 6.4 Repository state at the end
+
+Fixes 1-6 plus this `debug/` folder were committed by the user at 21:32 (`72e83cd debug`). Fixes 7
+(`ag_demand_map.csv` + `.rda`) and 8 (`R/functions.R`) are uncommitted changes in the working tree of
+`gcamreport-temp`; nothing was committed by the debugging session itself. Experiment-only rgcam project
+files (`u0909r_Ref_diag.dat`, `u0909r_Ref_u0909_run11.dat`) were moved out of `Input/` to the session
+scratch folder; `Input/` holds only the two databases, the two configuration XMLs, `process_u0909.R`,
+the two project files written by run 20 and `reports_u0909/`.
 
 ## 6b. Operational note: database queries stall while the network is down
 
@@ -319,7 +442,7 @@ this and each finished in about 8 minutes).
 
 ## 7. Summary of all changes made to `gcamreport-temp`
 
-All changes are mapping data only; no R code was modified. Each `.rda` was rebuilt from its CSV with
+Changes 1-7 are mapping data only; change 8 is a small R code fix. Each `.rda` was rebuilt from its CSV with
 explicit `col_types` and checked to be the shipped table plus exactly the listed rows.
 
 | # | file(s) | rows added | why |
@@ -330,7 +453,9 @@ explicit `col_types` and checked to be the shipped table plus exactly the listed
 | 4 | `en_price_map.csv` / `energy_price_map_v9.1.rda` | `dac-ceiling`, `CO2_Kor`, `rowCO2`, `rowCO2_LUC` → NoReported | NZ-only policy markets |
 | 5 | `primary_energy_map.csv` / `primary_energy_map_v9.1.rda` | `bio-ceiling CCS` → NoReported | NZ-only |
 | 6 | `inst/extdata/mappings/GCAM9.1/CO2market_new.csv`, `data/co2_market_v9.1.rda` | `rowCO2` → 31 non-Korea regions | rest-of-world carbon price was reported as 0 |
+| 7 | `inst/extdata/mappings/GCAM9.1/ag_demand_map.csv`, `data/ag_demand_map_v9.1.rda` | `bio-ceiling` / `regional biomass` → NoReported | `debug.R` has its `ignore` argument commented out (§5) |
+| 8 | `R/functions.R` | `is_ignored()` helper; two `grepl(paste(ignore.global))` filters replaced | empty `ignore` pattern matched every CO2 market → zero carbon prices (§5b) |
 
-Not changed: `debug.R` logic (only paths), `inst/extdata/saveDataFiles_GCAM9.1.R` (recommended:
+Not changed: `debug.R` logic (only paths; its `ignore` line is commented out, §5), `inst/extdata/saveDataFiles_GCAM9.1.R` (recommended:
 add explicit `col_types`, see §4), `en_demand_price_map.csv` (see the `delivered coal` note in §4).
 Every "BEFORE" copy of a touched CSV/`.rda` is in `Error_Log/`.
